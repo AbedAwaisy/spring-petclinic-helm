@@ -1,0 +1,19 @@
+app:
+  name: petclinic
+  image: dsyer/petclinic
+  imageTag: latest
+  nodePort: 31111
+  servicePort: 80
+  containerPort: 8080
+
+db:
+  name: demo-db
+  image: postgres:17
+  user: user
+  password: pass
+  database: petclinic
+  port: 5432
+
+ingress:
+  enabled: true
+  host: petclinic.local

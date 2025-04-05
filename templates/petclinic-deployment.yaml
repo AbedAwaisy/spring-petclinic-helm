@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+  labels:
+    app: {{ .Values.app.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      containers:
+        - name: {{ .Values.app.name }}
+          image: "{{ .Values.app.image }}:{{ .Values.app.imageTag }}"
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: postgres
+            - name: SERVICE_BINDING_ROOT
+              value: /bindings
+            - name: SPRING_APPLICATION_JSON
+              value: |
+                {
+                  "management.endpoint.health.probes.add-additional-paths": true
+                }
+          ports:
+            - name: http
+              containerPort: {{ .Values.app.containerPort }}
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          volumeMounts:
+            - mountPath: /bindings/secret
+              name: binding
+              readOnly: true
+      volumes:
+        - name: binding
+          projected:
+            sources:
+              - secret:
+                  name: {{ .Values.db.name }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.app.servicePort }}
+      targetPort: {{ .Values.app.containerPort }}
+      nodePort: {{ .Values.app.nodePort }}
+  selector:
+    app: {{ .Values.app.name }}
